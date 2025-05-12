@@ -3,6 +3,21 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* *{
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+color: white;  
+} */
+
+.content_title ::before{
+  font-weight: 400;
+  display: block;
+  font-size: 1rem;
+  margin-bottom: 10vh;
+  text-align: center;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
