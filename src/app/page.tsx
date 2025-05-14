@@ -1,8 +1,8 @@
 "use client";
 import HomeSection from "@/components/Home";
 import { SpinningText } from "@/components/magicui/spinning-text";
-import FeaturesSection from "@/components/Fetures";
-
+import TakeActionSection from "@/components/Fetures";
+import NewPage from "@/components/New";
 export default function Home() {
 
   return (
@@ -12,7 +12,8 @@ export default function Home() {
   >Cancel•Misogyny•</SpinningText>
 
   <HomeSection />
-  <FeaturesSection/>
+  <TakeActionSection/>
+  <NewPage/>
 </div>
 
   );
