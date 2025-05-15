@@ -3,12 +3,86 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* *{
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-color: white;  
-} */
+html {
+  --bg-color: #3A0519;
+  background: var(--bg-color);
+  transition: background-color 0.8s ease;
+}
+
+
+
+img {
+  position: relative;
+  object-fit: cover;
+}
+
+h1{
+  font-size: 5vw;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  text-indent:5em;
+  color: white;
+  -webkit-font-smoothing: antialiased;
+
+}
+
+section{
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  padding: 2em;
+  background-color: #1f1f1f;
+  overflow: hidden;
+}
+.intro,
+.outro{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.sticky-cards{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #0f0f0f;
+  color: white;
+}
+
+.cards-container{
+  position: relative;
+  width: 50%;
+  height: 50%;
+  border-radius: 0.5em;
+  overflow: hidden;
+}
+
+.tag{
+position: absolute;
+top: 1em;
+left: 1em;
+padding: 0.5em;
+border-radius: 0.25em;
+z-index: 1;
+}
+
+.tag p{
+  text-transform: uppercase;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  -webkit-font-smoothing: antialiased;
+}
+
+.tap p{
+  text-transform: uppercase;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  -webkit-font-smoothing: antialiased;
+
+}
 
 .content_title ::before{
   font-weight: 400;
@@ -16,6 +90,17 @@ color: white;
   font-size: 1rem;
   margin-bottom: 10vh;
   text-align: center;
+}
+
+@media(max-width: 1000px){
+  h1{
+    font-size: 7vw;
+    text-indent: 2em;
+  }
+  .cards-container{
+    width: 95%;
+    
+  }
 }
 
 @theme inline {
@@ -131,7 +216,5 @@ color: white;
   * {
     @apply border-border outline-ring/50;
   }
-  body {
-    @apply bg-background text-foreground;
-  }
+  
 }
