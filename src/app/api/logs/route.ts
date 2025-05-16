@@ -1,7 +1,6 @@
 import clientPromise from "@/lib/mongo";
 import { NextRequest, NextResponse } from "next/server";
 
-// Types (reuse from previous step if in a shared types file)
 type AIAnalysis = {
   sexism_score: number;
   counter_comments: string[];
@@ -15,6 +14,7 @@ type LogDoc = {
   tags: string[];
   votes: { sexist: number; notSexist: number };
   createdAt: Date;
+  userId: string; // Add userId
 };
 
 export async function GET(request: NextRequest) {
@@ -23,18 +23,17 @@ export async function GET(request: NextRequest) {
     const db = client.db(process.env.MONGODB_DB || "reclaim");
     const logs = db.collection<LogDoc>("logs");
 
-    // Optional: filter by tag or severity via query params
     const { searchParams } = new URL(request.url);
 
     const tag = searchParams.get("tag");
     const minScore = searchParams.get("minScore");
+    const userId = searchParams.get("userId"); // Get userId param
 
-    // Build query object
-const query: Record<string, unknown> = {};
+    const query: Record<string, unknown> = {};
     if (tag) query.tags = tag;
     if (minScore) query["ai_analysis.sexism_score"] = { $gte: Number(minScore) };
+    if (userId) query.userId = userId; // Filter by userId
 
-    // Fetch logs, most recent first
     const logDocs = await logs
       .find(query)
       .sort({ createdAt: -1 })

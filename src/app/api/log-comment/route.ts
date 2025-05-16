@@ -1,4 +1,3 @@
-// app/api/log-comment/route.ts
 import clientPromise from "@/lib/mongo";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -16,19 +15,21 @@ type LogDoc = {
   tags: string[];
   votes: { sexist: number; notSexist: number };
   createdAt: Date;
+  userId: string; // Add userId
 };
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { text, explanation, ai_analysis, tags } = body as {
+    const { text, explanation, ai_analysis, tags, userId } = body as {
       text: string;
       explanation: string;
       ai_analysis: AIAnalysis;
       tags: string[];
+      userId: string;
     };
 
-    if (!text || !explanation || !ai_analysis || !tags) {
+    if (!text || !explanation || !ai_analysis || !tags || !userId) {
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
     }
 
@@ -43,6 +44,7 @@ export async function POST(request: NextRequest) {
       tags,
       votes: { sexist: 0, notSexist: 0 },
       createdAt: new Date(),
+      userId, // Store userId
     };
 
     const result = await logs.insertOne(logDoc);

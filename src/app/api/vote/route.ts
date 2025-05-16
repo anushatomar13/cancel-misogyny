@@ -2,10 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import clientPromise from "@/lib/mongo";
 import { ObjectId } from "mongodb";
 
-// Type definitions
 type VoteDoc = {
-  logId: string; // ID of the comment log
-  userId?: string; // Optional user ID or IP hash
+  logId: string;
+  userId: string;
   vote: "sexist" | "notSexist";
   createdAt: Date;
 };
@@ -15,11 +14,11 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { logId, userId, vote } = body as {
       logId: string;
-      userId?: string;
+      userId: string;
       vote: "sexist" | "notSexist";
     };
 
-    if (!logId || !vote) {
+    if (!logId || !vote || !userId) {
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
     }
 
@@ -28,32 +27,105 @@ export async function POST(request: NextRequest) {
     const votesCollection = db.collection<VoteDoc>("votes");
     const logsCollection = db.collection("logs");
 
-    // Optional: Check if user has already voted on this log (if userId provided)
-    if (userId) {
-      const existingVote = await votesCollection.findOne({ logId, userId });
-      if (existingVote) {
-        return NextResponse.json({ error: "User has already voted" }, { status: 409 });
-      }
+    const session = client.startSession();
+    let result;
+
+    try {
+      await session.withTransaction(async () => {
+        // Get existing vote
+        const existingVote = await votesCollection.findOne(
+          { logId, userId },
+          { session }
+        );
+
+        // Prepare update operations
+        const logUpdate: Record<string, number> = {};
+        
+        if (existingVote) {
+          // Decrement previous vote
+          logUpdate[`votes.${existingVote.vote}`] = -1;
+        }
+
+        // Increment new vote
+        logUpdate[`votes.${vote}`] = 1;
+
+        // Update vote record
+        await votesCollection.updateOne(
+          { logId, userId },
+          { $set: { vote, createdAt: new Date() } },
+          { upsert: true, session }
+        );
+
+        // Update log counts
+        await logsCollection.updateOne(
+          { _id: new ObjectId(logId) },
+          { $inc: logUpdate },
+          { session }
+        );
+      });
+
+      result = { success: true };
+    } finally {
+      await session.endSession();
     }
 
-    // Insert vote document
-    const voteDoc: VoteDoc = {
-      logId,
-      userId,
-      vote,
-      createdAt: new Date(),
+    return NextResponse.json(result, { status: 200 });
+  } catch (err) {
+    console.error(err);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { logId, userId } = body as {
+      logId: string;
+      userId: string;
     };
 
-    await votesCollection.insertOne(voteDoc);
+    if (!logId || !userId) {
+      return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+    }
 
-    // Update vote counts in logs collection
-    const voteField = vote === "sexist" ? "votes.sexist" : "votes.notSexist";
-    await logsCollection.updateOne(
-      { _id: new ObjectId(logId) },
-      { $inc: { [voteField]: 1 } }
-    );
+    const client = await clientPromise;
+    const db = client.db(process.env.MONGODB_DB || "reclaim");
+    const votesCollection = db.collection<VoteDoc>("votes");
+    const logsCollection = db.collection("logs");
 
-    return NextResponse.json({ success: true }, { status: 200 });
+    const session = client.startSession();
+    let result;
+
+    try {
+      await session.withTransaction(async () => {
+        // Get existing vote
+        const existingVote = await votesCollection.findOne(
+          { logId, userId },
+          { session }
+        );
+
+        if (existingVote) {
+          // Decrement vote count
+          await logsCollection.updateOne(
+            { _id: new ObjectId(logId) },
+            { $inc: { [`votes.${existingVote.vote}`]: -1 } },
+            { session }
+          );
+
+          // Remove vote record
+          await votesCollection.deleteOne(
+            { logId, userId },
+            { session }
+          );
+        }
+      });
+
+      result = { success: true };
+    } finally {
+      await session.endSession();
+    }
+
+    return NextResponse.json(result, { status: 200 });
   } catch (err) {
     console.error(err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
