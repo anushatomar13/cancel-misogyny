@@ -63,12 +63,11 @@ const TakeActionSection = (
         ref={containerRef}
         className="flex items-center" 
       >
-        <div 
-          ref={textRef}
-          className="text-white text-6xl font-bold tracking-wider"
-        >
-          TAKE ACTION
-        </div>
+       <div ref={textRef} className="text-center text-white">
+  <div className="text-6xl font-bold tracking-wider">TAKE ACTION</div>
+  <p className="text-[14px] font-nohemi-medium mt-2 tracking-wide opacity-80">analyse comments • log comments • learn about online sexism</p>
+</div>
+
         
         <div 
           ref={buttonRef}

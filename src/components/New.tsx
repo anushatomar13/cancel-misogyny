@@ -72,8 +72,8 @@ const StackingCards: React.FC = () => {
   }, []);
 
   const comments: CommentImage[] = [
-    { imageSrc: '/images/image1.jpg', color: '' },
-    { imageSrc: '/images/image2.jpg', color: '' },
+    { imageSrc: '/comments/1.jpeg', color: '' },
+    { imageSrc: '/comments/2.jpeg', color: '' },
     { imageSrc: '/images/image3.jpg', color: '' },
     { imageSrc: '/images/image4.jpg', color: '' }
   ];
