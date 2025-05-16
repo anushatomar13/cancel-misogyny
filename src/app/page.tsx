@@ -1,7 +1,7 @@
 
 "use client";
 import HomeSection from "@/components/Home";
-import StackingCards from "@/components/New";
+import StackingCards from "@/components/SeeSuchComments";
 import ButtonGsap from "@/components/ui/gsap-button";
 import { useRef, useState, useEffect } from "react";
 import { useScroll, motion } from "framer-motion";
@@ -156,7 +156,7 @@ export default function Home() {
 <LFTSection/>
       <div
         ref={showcaseRef}
-        className="color-section flex flex-row items-center justify-center gap-x-200"
+        className="color-section flex flex-row items-center justify-center gap-x-150"
         data-bg-color="#9a0001"
       >
         <StackingCards />

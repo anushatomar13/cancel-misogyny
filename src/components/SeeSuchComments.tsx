@@ -32,7 +32,7 @@ const Card: React.FC<CardProps> = ({
   return (
     <div className="h-screen flex items-center justify-center sticky top-1 mt-100">
       <motion.div
-        className={`${color} h-[400px] w-[700px] sm:w-4/5 md:w-2/3 lg:w-[300px] relative`}
+        className={`${color} h-[400px] w-[700px] sm:w-4/5 md:w-2/3 lg:w-[400px] relative`}
         style={{
           scale,
           zIndex: zIndexValue,
