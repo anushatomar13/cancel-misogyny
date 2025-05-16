@@ -1,247 +1,225 @@
 "use client";
-
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import { useUser } from "@clerk/nextjs";
 
-type AIAnalysis = {
-  sexism_score: number;
-  counter_comments: string[];
-  tags: string[];
-};
-
-type Log = {
-  _id: string;
-  text: string;
-  explanation: string;
-  ai_analysis: AIAnalysis;
-  tags: string[];
-  votes: { sexist: number; notSexist: number };
-  createdAt: string;
-  userId?: string;
-};
-
-export default function LogbookPage() {
-  const [logs, setLogs] = useState<Log[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [selectedTag, setSelectedTag] = useState<string | null>(null);
-  const [allTags, setAllTags] = useState<string[]>([]);
+export default function LogCommentPage() {
+  const [text, setText] = useState("");
+  const [explanation, setExplanation] = useState("");
+  const [tags, setTags] = useState("");
+  const [success, setSuccess] = useState(false);
   const { user } = useUser();
 
-  const fetchLogs = useCallback(async () => {
-    try {
-      setLoading(true);
-      const url = selectedTag
-        ? `/api/logs?tag=${encodeURIComponent(selectedTag)}`
-        : "/api/logs";
-
-      const response = await fetch(url, {
-        cache: "no-store",
-        headers: {
-          pragma: "no-cache",
-          "cache-control": "no-cache",
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch logs");
-      }
-
-      const data = await response.json();
-
-      if (!Array.isArray(data.logs)) {
-        throw new Error("Invalid data format received");
-      }
-
-      setLogs(data.logs);
-
-      const tags = data.logs.flatMap((log: Log) => log.tags || []);
-      const uniqueTags = Array.from(new Set(tags.filter(Boolean)));
-      setAllTags(uniqueTags);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
-    } finally {
-      setLoading(false);
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setSuccess(false);
+    
+    if (!user?.id) {
+      alert("You must be signed in to log a comment.");
+      return;
     }
-  }, [selectedTag]);
-
-  useEffect(() => {
-    fetchLogs();
-    const intervalId = setInterval(() => {
-      fetchLogs();
-    }, 5000);
-
-    return () => clearInterval(intervalId);
-  }, [fetchLogs]);
-
-  async function handleVote(logId: string, voteType: "sexist" | "notSexist") {
-    if (!user) return;
-
+    
     try {
-      const response = await fetch("/api/vote", {
+      // Step 1: Get AI analysis first
+      const analysisRes = await fetch("/api/analyze-comment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+      
+      if (!analysisRes.ok) throw new Error("Analysis failed");
+      
+      const analysis = await analysisRes.json();
+      
+      // Step 2: Now save the comment with the analysis
+      const res = await fetch("/api/log-comment", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          logId,
+          text,
+          explanation,
+          ai_analysis: analysis, // Use the AI analysis results
+          tags: analysis.tags || tags.split(",").map(t => t.trim()),
           userId: user.id,
-          vote: voteType,
         }),
       });
-
-      if (!response.ok) {
-        throw new Error("Failed to submit vote");
+      
+      if (res.ok) {
+        setSuccess(true);
+        // Clear form after successful submission
+        setText("");
+        setExplanation("");
+        setTags("");
       }
-
-      setLogs((prevLogs) =>
-        prevLogs.map((log) => {
-          if (log._id === logId) {
-            const newVotes = { ...log.votes };
-            newVotes[voteType]++;
-            return { ...log, votes: newVotes };
-          }
-          return log;
-        })
-      );
-
-      fetchLogs();
-    } catch (err) {
-      console.error("Vote error:", err);
-    }
-  }
-
-  function formatDate(dateStr: string) {
-    try {
-      return new Date(dateStr).toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-    } catch {
-      return dateStr;
+    } catch (error) {
+      console.error("Error:", error);
+      alert("Failed to analyze and save comment");
     }
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-purple-900 to-black text-white">
-      <main className="max-w-4xl mx-auto p-6">
-        <div className="flex items-center justify-center mb-8">
-          <span className="text-pink-300 mr-2">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-8 w-8"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
-              <path
-                fillRule="evenodd"
-                d="M10 2a8 8 0 100 16 8 8 0 000-16zm0 14a6 6 0 110-12 6 6 0 010 12z"
-                clipRule="evenodd"
+    <>
+      {/* Full page background overlay */}
+      <div className="log-comment-page-overlay">
+        <main className="log-comment-main">
+          <h2 className="log-comment-title font-nohemi-bold">LOG A COMMENT</h2>
+          
+          <form onSubmit={handleSubmit} className="log-comment-form">
+            <div className="form-group">
+              <label htmlFor="comment-text" className="form-label">Comment Text</label>
+              <textarea
+                id="comment-text"
+                value={text}
+                onChange={e => setText(e.target.value)}
+                rows={3}
+                className="form-input"
+                placeholder="Enter the misogynistic comment here"
+                required
               />
-              <path d="M10 6a1 1 0 011 1v1h1a1 1 0 110 2h-1v1a1 1 0 11-2 0v-1H8a1 1 0 110-2h1V7a1 1 0 011-1z" />
-            </svg>
-          </span>
-          <h1 className="text-4xl font-bold">Logbook Analysis</h1>
-        </div>
-
-        <div className="mb-8">
-          <h2 className="text-lg font-medium mb-2">Filter by tag:</h2>
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => setSelectedTag(null)}
-              className={`px-3 py-1 rounded-full text-sm ${
-                selectedTag === null
-                  ? "bg-pink-600 text-white"
-                  : "bg-gray-700 text-gray-200"
-              }`}
-            >
-              All
-            </button>
-            {allTags.map((tag) => (
-              <button
-                key={tag}
-                onClick={() => setSelectedTag(tag)}
-                className={`px-3 py-1 rounded-full text-sm ${
-                  selectedTag === tag
-                    ? "bg-pink-600 text-white"
-                    : "bg-gray-700 text-gray-200"
-                }`}
-              >
-                {tag}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {loading && (
-          <div className="flex justify-center py-10">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-pink-500"></div>
-          </div>
-        )}
-
-        {error && (
-          <div className="bg-red-900 text-white p-4 rounded-lg mb-6">
-            <p>{error}</p>
-            <button
-              onClick={() => fetchLogs()}
-              className="mt-2 px-4 py-2 bg-red-700 hover:bg-red-800 rounded-lg"
-            >
-              Try Again
-            </button>
-          </div>
-        )}
-
-        {!loading && logs.length === 0 && (
-          <div className="text-center py-10">
-            <p className="text-xl">No comments found.</p>
-            <p className="text-gray-400 mt-2">Be the first to log a comment!</p>
-          </div>
-        )}
-
-        <div className="space-y-6">
-          {logs.map((log) => (
-            <div
-              key={log._id}
-              className="bg-gray-800 p-4 rounded-lg shadow-md transition-all"
-            >
-              <div className="mb-2 text-sm text-gray-400">
-                {formatDate(log.createdAt)}
-              </div>
-              <p className="text-lg font-medium">{log.text}</p>
-              <p className="text-sm mt-2 text-pink-300 italic">
-                {log.explanation}
-              </p>
-
-              <div className="mt-4 flex flex-wrap gap-2">
-                {log.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="bg-pink-700 text-white px-2 py-1 text-xs rounded-full"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-
-              <div className="mt-4 flex gap-4">
-                <button
-                  onClick={() => handleVote(log._id, "sexist")}
-                  className="bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-sm"
-                >
-                  Sexist ({log.votes.sexist})
-                </button>
-                <button
-                  onClick={() => handleVote(log._id, "notSexist")}
-                  className="bg-green-600 hover:bg-green-700 px-3 py-1 rounded text-sm"
-                >
-                  Not Sexist ({log.votes.notSexist})
-                </button>
-              </div>
             </div>
-          ))}
-        </div>
-      </main>
-    </div>
+            
+            <div className="form-group">
+              <label htmlFor="explanation" className="form-label">Explanation</label>
+              <textarea
+                id="explanation"
+                value={explanation}
+                onChange={e => setExplanation(e.target.value)}
+                rows={2}
+                className="form-input"
+                placeholder="Why is this comment harmful or problematic?"
+                required
+              />
+            </div>
+            
+            <div className="form-group">
+              <label htmlFor="tags" className="form-label">Tags</label>
+              <input
+                id="tags"
+                type="text"
+                value={tags}
+                onChange={e => setTags(e.target.value)}
+                className="form-input"
+                placeholder="stereotype, misogyny, gender_inequality (comma separated)"
+              />
+            </div>
+            
+            <div className="form-actions">
+              <button type="submit" className="submit-button">
+                Log Comment
+              
+              </button>
+              <br/>
+              {success && <div className="success-message">Comment successfully logged!</div>}
+            </div>
+          </form>
+        </main>
+      </div>
+
+      <style jsx>{`
+        /* Full page overlay to override any other background */
+        .log-comment-page-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: #16161a;
+          color: #e0e0e0;
+          overflow-y: auto;
+          z-index: 10;
+        }
+
+        .log-comment-main {
+          width: 100%;
+          max-width: 600px;
+          min-height: 100vh;
+          margin: 0 auto;
+          padding: 2rem 1.5rem;
+          box-sizing: border-box;
+        }
+
+        .log-comment-title {
+          font-size: 2rem;
+          font-weight: bold;
+          margin-bottom: 2rem;
+          text-align: left;
+          color: #fff;
+        }
+
+        .log-comment-form {
+          display: flex;
+          flex-direction: column;
+          gap: 1.5rem;
+        }
+
+        .form-group {
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+        }
+
+        .form-label {
+          font-size: 1rem;
+          font-weight: 500;
+          color: #90caf9;
+        }
+
+        .form-input {
+          background: #232336;
+          border: 1px solid #333;
+          border-radius: 8px;
+          padding: 0.8rem 1rem;
+          font-size: 1rem;
+          color: #e0e0e0;
+          width: 100%;
+          resize: vertical;
+          outline: none;
+          transition: border-color 0.2s;
+        }
+
+        .form-input:focus {
+          border-color: #6366f1;
+        }
+
+        .form-actions {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+          margin-top: 0.5rem;
+        }
+
+        .submit-button {
+          background: #6366f1;
+          color: #fff;
+          border: none;
+          border-radius: 6px;
+          padding: 0.7rem 1.8rem;
+          font-size: 1rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: background 0.2s;
+        }
+
+        .submit-button:hover {
+          background: #4f46e5;
+        }
+
+        .success-message {
+          color: #4ade80;
+          font-weight: 500;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 640px) {
+          .log-comment-main {
+            padding: 1.5rem 1rem;
+          }
+          
+          .log-comment-title {
+            font-size: 1.7rem;
+            margin-bottom: 1.5rem;
+          }
+        }
+      `}</style>
+    </>
   );
 }

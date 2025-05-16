@@ -21,57 +21,61 @@ export default function LogbookPage() {
   const [userVotes, setUserVotes] = useState<{ [logId: string]: "sexist" | "notSexist" }>({});
   const [logs, setLogs] = useState<Log[]>([]);
   const [loading, setLoading] = useState(true);
+  const [tagQuery, setTagQuery] = useState("");
+  const [dateQuery, setDateQuery] = useState("");
 
-useEffect(() => {
-  const loadData = async () => {
-    try {
-      const logsRes = await fetch("/api/logs");
-      const logsData = await logsRes.json();
-      setLogs(logsData.logs || []);
-    } catch (error) {
-      console.error("Loading failed:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        let url = "/api/logs";
+        const params: string[] = [];
+        if (tagQuery) params.push(`tag=${encodeURIComponent(tagQuery)}`);
+        if (dateQuery) params.push(`date=${encodeURIComponent(dateQuery)}`);
+        if (params.length) url += "?" + params.join("&");
 
-  loadData();
-}, [user?.id]);
-
+        const logsRes = await fetch(url);
+        const logsData = await logsRes.json();
+        setLogs(logsData.logs || []);
+      } catch (error) {
+        console.error("Loading failed:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
+  }, [tagQuery, dateQuery, user?.id]);
 
   async function handleVoteAction(logId: string, newVote: "sexist" | "notSexist" | null) {
     if (!user?.id) return;
-
     try {
       const method = newVote ? "POST" : "DELETE";
-      const body = JSON.stringify({ 
-        logId, 
+      const body = JSON.stringify({
+        logId,
         vote: newVote,
-        userId: user.id 
+        userId: user.id,
       });
 
       const res = await fetch("/api/vote", {
         method,
         headers: { "Content-Type": "application/json" },
-        body
+        body,
       });
 
       if (!res.ok) throw new Error("Vote update failed");
 
-      // Optimistic UI update
-      setLogs(prevLogs => prevLogs.map(log => {
-        if (log._id !== logId) return log;
-        
-        const updatedVotes = { ...log.votes };
-        const currentVote = userVotes[logId];
+      setLogs((prevLogs) =>
+        prevLogs.map((log) => {
+          if (log._id !== logId) return log;
+          const updatedVotes = { ...log.votes };
+          const currentVote = userVotes[log._id];
+          if (currentVote) updatedVotes[currentVote]--;
+          if (newVote) updatedVotes[newVote]++;
+          return { ...log, votes: updatedVotes };
+        })
+      );
 
-        if (currentVote) updatedVotes[currentVote]--;
-        if (newVote) updatedVotes[newVote]++;
-
-        return { ...log, votes: updatedVotes };
-      }));
-
-      setUserVotes(prev => {
+      setUserVotes((prev) => {
         const newVotes = { ...prev };
         if (newVote) {
           newVotes[logId] = newVote;
@@ -80,206 +84,219 @@ useEffect(() => {
         }
         return newVotes;
       });
-
     } catch (error) {
       console.error("Vote error:", error);
       alert("Failed to update vote. Please try again.");
     }
   }
 
+  function formatDate(dateStr: string) {
+    try {
+      return new Date(dateStr).toLocaleString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch {
+      return dateStr;
+    }
+  }
+
   return (
-    <main className="logbook-container">
-      <h2 className="logbook-header">🧠 Logbook Analysis</h2>
-      
-      {loading ? (
-        <div className="loading-indicator">Loading logs...</div>
-      ) : logs.length === 0 ? (
-        <div className="empty-state">No logs found 📭</div>
-      ) : (
-        <ul className="log-list">
-          {logs.map(log => {
-            const currentVote = userVotes[log._id];
-            const isSexistSelected = currentVote === "sexist";
-            const isNotSexistSelected = currentVote === "notSexist";
+    <>
+      {/* Full page background overlay */}
+      <div className="logbook-page-overlay">
+        <main className="logbook-main">
+          <h2 className="logbook-title font-nohemi-bold">LOGBOOK</h2>
 
-            return (
-              <li key={log._id} className="log-item">
-                <div className="log-content">
-                  <div className="comment-section">
-                    <span className="label">🗣️ Comment:</span>
-                    <p className="comment-text">{log.text}</p>
-                  </div>
+          <div className="logbook-filters">
+            <input
+              type="text"
+              placeholder="Search by tag (e.g. stereotype)"
+              value={tagQuery}
+              onChange={(e) => setTagQuery(e.target.value)}
+              className="logbook-input"
+            />
+            <input
+              type="date"
+              value={dateQuery}
+              onChange={(e) => setDateQuery(e.target.value)}
+              className="logbook-input"
+            />
+          </div>
 
-                  <div className="explanation-section">
-                    <span className="label">💡 Explanation:</span>
-                    <p className="explanation-text">{log.explanation}</p>
-                  </div>
-
-                  <div className="tags-section">
-                    <span className="label">🏷️ Tags:</span>
-                    <div className="tags-container">
-                      {log.tags.map(tag => (
-                        <span key={tag} className="tag">
-                          #{tag}
-                        </span>
-                      ))}
+          {loading ? (
+            <div className="logbook-loading">Loading logs...</div>
+          ) : logs.length === 0 ? (
+            <div className="logbook-empty">No logs found 📭</div>
+          ) : (
+            <ul className="logbook-list">
+              {logs.map((log) => {
+                const currentVote = userVotes[log._id];
+                const isSexistSelected = currentVote === "sexist";
+                const isNotSexistSelected = currentVote === "notSexist";
+                return (
+                  <li key={log._id} className="logbook-list-item">
+                    <div className="logbook-meta">
+                      <span className="logbook-date">{formatDate(log.createdAt)}</span>
+                      <div className="logbook-tags">
+                        {log.tags.map((tag) => (
+                          <span key={tag} className="logbook-tag">
+                            #{tag}
+                          </span>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-
-                  <div className="votes-section">
-                    <span className="label">📊 Votes:</span>
-                    <div className="votes-display">
-                      <span className="sexist-votes">{log.votes.sexist}</span>
-                      <span className="divider">|</span>
-                      <span className="not-sexist-votes">{log.votes.notSexist}</span>
+                    <div className="logbook-comment">{log.text}</div>
+                    <div className="logbook-explanation">{log.explanation}</div>
+                    <div className="logbook-votes">
+                      <button
+                        className={`logbook-vote-btn logbook-vote-sexist${isSexistSelected ? " selected" : ""}`}
+                        onClick={() => handleVoteAction(log._id, isSexistSelected ? null : "sexist")}
+                      >
+                        {isSexistSelected ? "✅" : ""} Sexist ({log.votes.sexist})
+                      </button>
+                      <button
+                        className={`logbook-vote-btn logbook-vote-notsexist${isNotSexistSelected ? " selected" : ""}`}
+                        onClick={() => handleVoteAction(log._id, isNotSexistSelected ? null : "notSexist")}
+                      >
+                        {isNotSexistSelected ? "✅" : ""} Not Sexist ({log.votes.notSexist})
+                      </button>
                     </div>
-                  </div>
-                </div>
-
-                <div className="vote-controls">
-                  <button
-                    className={`vote-button sexist ${isSexistSelected ? 'selected' : ''}`}
-                    onClick={() => 
-                      handleVoteAction(log._id, isSexistSelected ? null : "sexist")
-                    }
-                  >
-                    {isSexistSelected ? '✅ Voted Sexist' : 'Vote Sexist'}
-                  </button>
-                  
-                  <button
-                    className={`vote-button not-sexist ${isNotSexistSelected ? 'selected' : ''}`}
-                    onClick={() => 
-                      handleVoteAction(log._id, isNotSexistSelected ? null : "notSexist")
-                    }
-                  >
-                    {isNotSexistSelected ? '✅ Voted Not Sexist' : 'Vote Not Sexist'}
-                  </button>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-      )}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </main>
+      </div>
 
       <style jsx>{`
-        .logbook-container {
-          max-width: 800px;
-          margin: 2rem auto;
-          padding: 2rem;
-          background-color: #121212;
+        /* Full page overlay to override any other background */
+        .logbook-page-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: #16161a;
           color: #e0e0e0;
-          font-family: 'Segoe UI', sans-serif;
+          overflow-y: auto;
+          z-index: 10;
         }
 
-        .logbook-header {
+        .logbook-main {
+          width: 100%;
+          min-height: 100vh;
+          margin: 0;
+          padding: 2rem 4vw;
+          box-sizing: border-box;
+        }
+
+        .logbook-title {
           font-size: 2rem;
           font-weight: bold;
-          margin-bottom: 2rem;
-          text-align: center;
+          margin-bottom: 1.5rem;
+          text-align: left;
+          color: #fff;
         }
-
-        .loading-indicator,
-        .empty-state {
-          text-align: center;
-          padding: 2rem;
-          color: #888;
+        .logbook-filters {
+          display: flex;
+          gap: 1rem;
+          margin-bottom: 1.5rem;
         }
-
-        .log-list {
+        .logbook-input {
+          background: #232336;
+          border: 1px solid #333;
+          color: #e0e0e0;
+          border-radius: 6px;
+          padding: 0.5rem 1rem;
+          font-size: 1rem;
+          outline: none;
+        }
+        .logbook-list {
           list-style: none;
           padding: 0;
-        }
-
-        .log-item {
-          margin-bottom: 2rem;
-          padding: 1.5rem;
-          background: #1e1e1e;
-          border-radius: 10px;
-          border: 1px solid #333;
-          box-shadow: 0 2px 6px rgba(0,0,0,0.4);
-        }
-
-        .label {
-          display: block;
-          margin-bottom: 0.5rem;
-          color: #888;
-          font-size: 0.9rem;
-        }
-
-        .comment-text,
-        .explanation-text {
           margin: 0;
-          color: #f5f5f5;
-          line-height: 1.5;
         }
-
-        .tags-container {
+        .logbook-list-item {
+          background: #232336;
+          border-radius: 8px;
+          margin-bottom: 1.2rem;
+          padding: 1.2rem 1rem;
+          border-left: 4px solid #6366f1;
           display: flex;
-          flex-wrap: wrap;
-          gap: 0.5rem;
-          margin-top: 0.5rem;
+          flex-direction: column;
+          align-items: flex-start;
         }
-
-        .tag {
-          background: #333;
-          padding: 0.3rem 0.6rem;
-          border-radius: 1rem;
-          font-size: 0.85rem;
-          color: #90caf9;
-        }
-
-        .votes-display {
+        .logbook-meta {
+          width: 100%;
           display: flex;
-          gap: 0.5rem;
           align-items: center;
-          margin-top: 0.5rem;
+          justify-content: space-between;
+          margin-bottom: 0.5rem;
         }
-
-        .sexist-votes { color: #f48fb1; }
-        .not-sexist-votes { color: #81c784; }
-        .divider { color: #444; }
-
-        .vote-controls {
-          margin-top: 1.5rem;
+        .logbook-date {
+          font-size: 0.9rem;
+          color: #a3a3a3;
+        }
+        .logbook-tags {
+          display: flex;
+          gap: 0.5rem;
+        }
+        .logbook-tag {
+          background: #37306b;
+          color: #90caf9;
+          border-radius: 1rem;
+          padding: 0.2rem 0.7rem;
+          font-size: 0.85rem;
+        }
+        .logbook-comment {
+          font-size: 1.08rem;
+          font-weight: 500;
+          margin-bottom: 0.4rem;
+          color: #fff;
+          text-align: left;
+        }
+        .logbook-explanation {
+          font-size: 0.97rem;
+          color: #f48fb1;
+          margin-bottom: 0.6rem;
+          text-align: left;
+        }
+        .logbook-votes {
           display: flex;
           gap: 1rem;
         }
-
-        .vote-button {
-          flex: 1;
-          padding: 0.75rem 1.5rem;
+        .logbook-vote-btn {
+          padding: 0.35rem 1.1rem;
+          border-radius: 6px;
           border: none;
-          border-radius: 8px;
+          background: #424242;
+          color: #e0e0e0;
           font-weight: 500;
           cursor: pointer;
-          transition: all 0.2s ease;
+          transition: background 0.15s;
         }
-
-        .vote-button.sexist {
-          background: #424242;
-          color: #f48fb1;
+        .logbook-vote-btn.selected {
+          background: #6366f1;
+          color: #fff;
         }
-
-        .vote-button.sexist.selected {
+        .logbook-vote-sexist.selected {
           background: #c2185b;
-          color: white;
         }
-
-        .vote-button.not-sexist {
-          background: #424242;
-          color: #81c784;
-        }
-
-        .vote-button.not-sexist.selected {
+        .logbook-vote-notsexist.selected {
           background: #388e3c;
-          color: white;
         }
-
-        .vote-button:hover {
-          opacity: 0.9;
-          transform: translateY(-1px);
+        .logbook-loading,
+        .logbook-empty {
+          text-align: left;
+          padding: 2rem 0;
+          color: #888;
         }
       `}</style>
-    </main>
+    </>
   );
 }
