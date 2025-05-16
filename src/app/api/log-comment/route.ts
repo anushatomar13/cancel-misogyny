@@ -1,5 +1,5 @@
 // app/api/log-comment/route.ts
-import clientPromise from "@/app/lib/mongo";
+import clientPromise from "@/lib/mongo";
 import { NextRequest, NextResponse } from "next/server";
 
 // Type definitions for incoming data

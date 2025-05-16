@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import clientPromise from "@/app/lib/mongo";
+import clientPromise from "@/lib/mongo";
 import { ObjectId } from "mongodb";
 
 // Type definitions

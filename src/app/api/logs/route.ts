@@ -1,5 +1,4 @@
-// app/api/logs/route.ts
-import clientPromise from "@/app/lib/mongo";
+import clientPromise from "@/lib/mongo";
 import { NextRequest, NextResponse } from "next/server";
 
 // Types (reuse from previous step if in a shared types file)
