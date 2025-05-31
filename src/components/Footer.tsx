@@ -30,15 +30,15 @@ const Footer: React.FC = () => {
         <div className="grid grid-cols-2 gap-8">
           <div>
             <ul className="space-y-1 text-sm text-gray-400 mt-7">
-              <li><Link href="/dashboard" className="hover:text-purple-400 uppercase">Analyze Comments</Link></li>
-              <li><Link href="/add-crime" className="hover:text-purple-400 uppercase">Get reply suggestions</Link></li>
-              <li><Link href="/map" className="hover:text-purple-400 uppercase">Understand misogynistic intents</Link></li>
+              <li><Link href="/pages/analyze" className="hover:text-purple-400 uppercase">Analyze Comments</Link></li>
+              <li><Link href="/pages/analyze" className="hover:text-purple-400 uppercase">Get reply suggestions</Link></li>
+              <li><Link href="/pages/learn" className="hover:text-purple-400 uppercase">Understand misogynistic intents</Link></li>
             </ul>
           </div>
           <div>
             <ul className="space-y-1 text-sm text-gray-400 mt-7">
-              <li><Link href="/ai-bot" className="hover:text-purple-400">KNOWLEDGE CORNER</Link></li>
-              <li><Link href="/contact" className="hover:text-purple-400">LEAVE A REVIEW</Link></li>
+              <li><Link href="/pages/learn" className="hover:text-purple-400">KNOWLEDGE CORNER</Link></li>
+              <li><Link href="/pages/log-comment" className="hover:text-purple-400">LOG COMMENTS</Link></li>
               <li><Link href="/terms" className="hover:text-purple-400">CONTACT US</Link></li>
             </ul>
           </div>
@@ -47,7 +47,7 @@ const Footer: React.FC = () => {
 
       {/* Bottom Line */}
       <div className="text-center text-xs text-gray-500 mt-10 border-t border-gray-800 pt-4">
-        © 2025 CancelMisogyny. All rights reserved.
+        © 2025 CancelMisogyny - Anusha Tomar. All rights reserved.
       </div>
     </footer>
   );

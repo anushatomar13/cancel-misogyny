@@ -15,11 +15,14 @@ export const Card = React.memo(
     hovered: number | null;
     setHovered: React.Dispatch<React.SetStateAction<number | null>>;
   }) => (
-    <div
+    <a
+      href={card.link}
+      target="_blank"
+      rel="noopener noreferrer"
       onMouseEnter={() => setHovered(index)}
       onMouseLeave={() => setHovered(null)}
       className={cn(
-        "rounded-lg relative bg-gray-100 dark:bg-neutral-900 overflow-hidden h-60 md:h-96 w-full transition-all duration-300 ease-out",
+        "rounded-lg relative bg-gray-100 dark:bg-neutral-900 overflow-hidden h-60 md:h-96 w-full transition-all duration-300 ease-out block",
         hovered !== null && hovered !== index && "blur-sm scale-[0.98]"
       )}
     >
@@ -38,9 +41,10 @@ export const Card = React.memo(
           {card.title}
         </div>
       </div>
-    </div>
+    </a>
   )
 );
+
 
 Card.displayName = "Card";
 

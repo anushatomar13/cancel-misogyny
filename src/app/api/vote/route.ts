@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import clientPromise from "@/lib/mongo";
-import { ObjectId } from "mongodb";
 
 type VoteDoc = {
   logId: string;
@@ -9,125 +8,55 @@ type VoteDoc = {
   createdAt: Date;
 };
 
-export async function POST(request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { logId, userId, vote } = body as {
-      logId: string;
-      userId: string;
-      vote: "sexist" | "notSexist";
-    };
+    const { searchParams } = new URL(request.url);
+    const userId = searchParams.get("userId");
 
-    if (!logId || !vote || !userId) {
-      return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+    if (!userId) {
+      return NextResponse.json({ error: "Missing userId parameter" }, { status: 400 });
     }
 
     const client = await clientPromise;
     const db = client.db(process.env.MONGODB_DB || "reclaim");
     const votesCollection = db.collection<VoteDoc>("votes");
-    const logsCollection = db.collection("logs");
 
-    const session = client.startSession();
-    let result;
+    // Get all votes for this user
+    const userVotes = await votesCollection
+      .find({ userId })
+      .toArray();
 
-    try {
-      await session.withTransaction(async () => {
-        // Get existing vote
-        const existingVote = await votesCollection.findOne(
-          { logId, userId },
-          { session }
-        );
-
-        // Prepare update operations
-        const logUpdate: Record<string, number> = {};
-        
-        if (existingVote) {
-          // Decrement previous vote
-          logUpdate[`votes.${existingVote.vote}`] = -1;
-        }
-
-        // Increment new vote
-        logUpdate[`votes.${vote}`] = 1;
-
-        // Update vote record
-        await votesCollection.updateOne(
-          { logId, userId },
-          { $set: { vote, createdAt: new Date() } },
-          { upsert: true, session }
-        );
-
-        // Update log counts
-        await logsCollection.updateOne(
-          { _id: new ObjectId(logId) },
-          { $inc: logUpdate },
-          { session }
-        );
-      });
-
-      result = { success: true };
-    } finally {
-      await session.endSession();
-    }
-
-    return NextResponse.json(result, { status: 200 });
+    return NextResponse.json({ votes: userVotes }, { status: 200 });
   } catch (err) {
-    console.error(err);
+    console.error("Error fetching user votes:", err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
 
-export async function DELETE(request: NextRequest) {
+// Add this to your API route file
+export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { logId, userId } = body as {
-      logId: string;
-      userId: string;
-    };
+    const { logId, userId, vote } = body;
 
-    if (!logId || !userId) {
-      return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+    if (!logId || !userId || !vote) {
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
     const client = await clientPromise;
     const db = client.db(process.env.MONGODB_DB || "reclaim");
     const votesCollection = db.collection<VoteDoc>("votes");
-    const logsCollection = db.collection("logs");
 
-    const session = client.startSession();
-    let result;
+    // Insert or update vote
+    const result = await votesCollection.replaceOne(
+      { logId, userId },
+      { logId, userId, vote, createdAt: new Date() },
+      { upsert: true }
+    );
 
-    try {
-      await session.withTransaction(async () => {
-        // Get existing vote
-        const existingVote = await votesCollection.findOne(
-          { logId, userId },
-          { session }
-        );
-
-        if (existingVote) {
-          // Decrement vote count
-          await logsCollection.updateOne(
-            { _id: new ObjectId(logId) },
-            { $inc: { [`votes.${existingVote.vote}`]: -1 } },
-            { session }
-          );
-
-          // Remove vote record
-          await votesCollection.deleteOne(
-            { logId, userId },
-            { session }
-          );
-        }
-      });
-
-      result = { success: true };
-    } finally {
-      await session.endSession();
-    }
-
-    return NextResponse.json(result, { status: 200 });
+    return NextResponse.json({ success: true }, { status: 200 });
   } catch (err) {
-    console.error(err);
+    console.error("Error saving vote:", err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
