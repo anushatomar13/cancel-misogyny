@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
     const votesCollection = db.collection<VoteDoc>("votes");
 
     // Insert or update vote
-    const result = await votesCollection.replaceOne(
+     await votesCollection.replaceOne(
       { logId, userId },
       { logId, userId, vote, createdAt: new Date() },
       { upsert: true }

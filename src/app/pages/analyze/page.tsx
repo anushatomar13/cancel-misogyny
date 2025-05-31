@@ -14,9 +14,9 @@ type AIResult = {
 
 export default function AnalyzePage() {
   const router = useRouter();
-  const placements = [
-    "top-start"
-  ];
+  // const placements = [
+  //   "top-start"
+  // ];
   const [comment, setComment] = useState("");
   const [image, setImage] = useState<File | null>(null);
 

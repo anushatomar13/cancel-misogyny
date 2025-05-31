@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
       const preprocessedContent = preprocessJson(contentText);
       const aiResult = JSON.parse(preprocessedContent);
       return NextResponse.json(aiResult, { status: 200 });
-    } catch (parseError) {
+    } catch {
       try {
         if (typeof contentText === 'object') {
           return NextResponse.json(contentText, { status: 200 });
@@ -70,11 +70,11 @@ export async function POST(request: NextRequest) {
           details: "JSON parsing error",
           raw_text: contentText
         }, { status: 500 });
-      } catch (err) {
+      } catch  {
         return NextResponse.json({ error: "Server error processing response" }, { status: 500 });
       }
     }
-  } catch (err) {
+  } catch {
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

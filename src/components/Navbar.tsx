@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const menuRef = useRef(null);
+const menuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -25,11 +25,12 @@ export function Navbar() {
 
   // Close mobile menu when clicking outside
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
-        setMobileMenuOpen(false);
-      }
-    };
+    const handleClickOutside = (event: MouseEvent) => {
+  if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+    setMobileMenuOpen(false);
+  }
+};
+
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => {

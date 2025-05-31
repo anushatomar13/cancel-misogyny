@@ -23,7 +23,7 @@ export default function Home() {
   const buttonRef = useRef(null);       // button reference
   const headingRef = useRef(null);
 
-  const { scrollYProgress } = useScroll({
+  const {  } = useScroll({
     target: showcaseRef,
     offset: ["start end", "start start"],
   });
@@ -114,18 +114,20 @@ colorSections.forEach((section) => {
       );
     });
 
-    useEffect(() => {
-      const observer = new IntersectionObserver(
-        ([entry]) => setIsCardSectionVisible(entry.isIntersecting),
-        { threshold: 0.1 }
-      );
+  useEffect(() => {
+  const sectionEl = showcaseRef.current; 
 
-      if (showcaseRef.current) observer.observe(showcaseRef.current);
+  const observer = new IntersectionObserver(
+    ([entry]) => setIsCardSectionVisible(entry.isIntersecting),
+    { threshold: 0.1 }
+  );
 
-      return () => {
-        if (showcaseRef.current) observer.unobserve(showcaseRef.current);
-      };
-    }, []);
+  if (sectionEl) observer.observe(sectionEl);
+
+  return () => {
+    if (sectionEl) observer.unobserve(sectionEl);
+  };
+}, []);
 
     return (
       <div>

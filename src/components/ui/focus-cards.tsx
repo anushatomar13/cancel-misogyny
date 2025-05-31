@@ -2,15 +2,16 @@
 
 import React, { useState } from "react";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 
 export const Card = React.memo(
   ({
     card,
     index,
     hovered,
-    setHovered,
+    setHovered
   }: {
-    card: any;
+     card: Card & { link: string }; 
     index: number;
     hovered: number | null;
     setHovered: React.Dispatch<React.SetStateAction<number | null>>;
@@ -26,11 +27,14 @@ export const Card = React.memo(
         hovered !== null && hovered !== index && "blur-sm scale-[0.98]"
       )}
     >
-      <img
-        src={card.src}
-        alt={card.title}
-        className="object-cover absolute inset-0"
-      />
+
+<Image
+  src={card.src}
+  alt={card.title}
+  fill
+  className="object-cover"
+/>
+
       <div
         className={cn(
           "absolute inset-0 bg-black/50 flex items-end py-8 px-4 transition-opacity duration-300",
@@ -51,6 +55,7 @@ Card.displayName = "Card";
 type Card = {
   title: string;
   src: string;
+  link:string;
 };
 
 export function FocusCards({ cards }: { cards: Card[] }) {

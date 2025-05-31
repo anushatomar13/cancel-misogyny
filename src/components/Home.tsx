@@ -1,14 +1,14 @@
 import React, { useEffect, useRef } from "react";
 import { gsap } from 'gsap';
-import { VelocityScroll } from "./magicui/scroll-based-velocity";
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import SplitType from 'split-type';
 
 gsap.registerPlugin(ScrollTrigger);
 
 export default function HomeSection(
-  { className, ...props }: { className?: string; [key: string]: any }
+  { className, ...props }: React.HTMLAttributes<HTMLDivElement>
 ) {
+
   const textRef = useRef<HTMLDivElement>(null);
   const paragraphRef = useRef<HTMLParagraphElement>(null);
 

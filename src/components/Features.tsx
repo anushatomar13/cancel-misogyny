@@ -1,10 +1,10 @@
-import { useEffect, useRef } from 'react';
+import React, { HTMLAttributes, useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/dist/ScrollTrigger';
 
-const TakeActionSection = (
-  { className, ...props }: { className?: string; [key: string]: any }
-) => {
+type TakeActionSectionProps = HTMLAttributes<HTMLDivElement>;
+
+const TakeActionSection = ({ className, ...props }: TakeActionSectionProps) => {
   const sectionRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
