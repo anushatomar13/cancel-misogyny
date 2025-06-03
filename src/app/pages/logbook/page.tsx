@@ -181,7 +181,7 @@ export default function LogbookPage() {
           ) : (
             <div>
               <div className="logs-count">
-                {logs.length} comment{logs.length !== 1 ? 's' : ''} in community database
+                {logs.length} comment{logs.length !== 1 ? 's' : ''} in community database!
               </div>
               <ul className="logbook-list">
                 {logs.map((log) => {

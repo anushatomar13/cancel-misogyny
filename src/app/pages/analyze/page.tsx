@@ -14,9 +14,6 @@ type AIResult = {
 
 export default function AnalyzePage() {
   const router = useRouter();
-  // const placements = [
-  //   "top-start"
-  // ];
   const [comment, setComment] = useState("");
   const [image, setImage] = useState<File | null>(null);
 
@@ -247,139 +244,141 @@ export default function AnalyzePage() {
 
   return (
     <>
-      <div className="fixed inset-0 bg-[#16161a] text-[#e0e0e0] overflow-y-auto z-10">
-        <main className="w-full max-w-[720px] min-h-screen mx-auto px-6 py-8">
-          <h2 className="analyze-title text-2xl font-bold mb-8 text-left text-white border-b-2 border-[#6366f1] pb-2 font-nohemi-bold">ANALYZE A COMMENT</h2>
+      <div className="min-h-screen w-full bg-[#16161a] text-[#e0e0e0]">
+        <main className="w-full min-h-screen px-6 py-8 lg:px-12 xl:px-16">
+          <div className="max-w-4xl mx-auto">
+            <h2 className="analyze-title text-2xl font-bold mb-8 text-left text-white border-b-2 border-[#6366f1] pb-2 font-nohemi-bold">ANALYZE A COMMENT</h2>
 
-          <form ref={formRef} onSubmit={handleAnalyze} className="flex flex-col gap-6 mb-8">
-            <div className="flex flex-col gap-2">
-              <label htmlFor="comment-text" className="text-base font-medium text-[#90caf9]">Enter Comment</label>
-              <textarea
-                id="comment-text"
-                value={comment}
-                onChange={e => setComment(e.target.value)}
-                rows={4}
-                className="bg-[#232336] border border-[#333] rounded-lg p-4 text-base text-[#e0e0e0] w-full resize-y outline-none transition-all duration-300 focus:border-[#6366f1] focus:shadow-[0_0_0_2px_rgba(99,102,241,0.2)]"
-                placeholder="Paste a potentially misogynistic comment here..."
-              />
-            </div>
-
-            <div className="flex flex-col gap-2 mt-2">
-              <label className="text-base font-medium text-[#90caf9]">
-                <div className="flex items-center gap-3 bg-[#232336] border border-dashed border-[#6366f1] p-4 rounded-lg cursor-pointer transition-all duration-300 hover:bg-[#2a2a42]">
-                  <div ref={uploadIconRef} className="text-2xl text-[#90caf9]">📷</div>
-                  <span>{image ? `Selected: ${image.name}` : 'Upload Image (Max 10MB)'}</span>
-                  {ocrLoading && <span className="text-sm text-[#f59e0b]">Extracting text...</span>}
-                </div>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={e => {
-                    const file = e.target.files?.[0] || null;
-                    setImage(file);
-                    setError(null); // Clear any previous errors
-                    
-                    // Animate the upload icon when a file is selected
-                    if (file && uploadIconRef.current) {
-                      gsap.to(uploadIconRef.current, {
-                        rotation: 720,
-                        scale: 1.2,
-                        duration: 0.8,
-                        ease: "elastic.out(1, 0.3)",
-                        onComplete: () => {
-                          gsap.to(uploadIconRef.current, {
-                            scale: 1,
-                            duration: 0.3
-                          });
-                        }
-                      });
-                    }
-                  }}
-                  className="hidden"
+            <form ref={formRef} onSubmit={handleAnalyze} className="flex flex-col gap-6 mb-8">
+              <div className="flex flex-col gap-2">
+                <label htmlFor="comment-text" className="text-base font-medium text-[#90caf9]">Enter Comment</label>
+                <textarea
+                  id="comment-text"
+                  value={comment}
+                  onChange={e => setComment(e.target.value)}
+                  rows={4}
+                  className="bg-[#232336] border border-[#333] rounded-lg p-4 text-base text-[#e0e0e0] w-full resize-y outline-none transition-all duration-300 focus:border-[#6366f1] focus:shadow-[0_0_0_2px_rgba(99,102,241,0.2)]"
+                  placeholder="Paste a potentially misogynistic comment here..."
                 />
-              </label>
-              <div className="text-xs text-[#a0aec0] mt-1">
-                Supported formats: JPEG, PNG, GIF, WebP. The app will extract text from your image.
-              </div>
-            </div>
-
-            <div className="flex justify-start mt-4">
-              <button
-                type="submit"
-                disabled={loading || ocrLoading || (!comment && !image)}
-                className={`bg-[#6366f1] text-white border-none rounded-md py-3 px-8 text-base font-semibold cursor-pointer transition-all duration-300 relative overflow-hidden ${loading || ocrLoading ? 'bg-[#4b4b63]' : ''} ${(!loading && !ocrLoading && !(!comment && !image)) ? 'hover:bg-[#4f46e5] hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(99,102,241,0.4)]' : ''} disabled:bg-[#4b4b63] disabled:cursor-not-allowed disabled:opacity-70`}
-              >
-                {ocrLoading ? 'Extracting Text...' : loading ? 'Analyzing...' : 'Analyze Comment'}
-              </button>
-            </div>
-          </form>
-
-          {loading && (
-            <div className="h-1.5 bg-[#232336] rounded-sm my-6 overflow-hidden">
-              <div ref={progressBarRef} className="h-full bg-gradient-to-r from-[#6366f1] to-[#818cf8] w-0 rounded-sm"></div>
-            </div>
-          )}
-
-          {error && (
-            <div className="flex items-center gap-3 bg-[#3b1827] border-l-4 border-[#e53e3e] p-4 rounded-md my-6 animate-[fadeIn_0.5s_ease-out]">
-              <div className="text-2xl">⚠️</div>
-              <div className="text-[#f56565]">{error}</div>
-            </div>
-          )}
-
-          {result && (
-            <div ref={resultRef} className="bg-[#232336] rounded-xl p-6 mt-8 shadow-[0_4px_20px_rgba(0,0,0,0.2)] border-l-4 border-[#6366f1]">
-              <div className="text-xl font-semibold text-white mb-6 text-center">Analysis Results</div>
-
-              <div className="mb-6 pb-6 border-b border-[#333344]">
-                <div className="text-lg font-medium text-[#90caf9] mb-3">Sexism Score</div>
-                <div className="h-3 bg-[#18181e] rounded-md overflow-hidden mb-2">
-                  <div
-                    ref={scoreRef}
-                    className="h-full w-0 transition-[width] duration-[1.5s] ease-in-out"
-                    style={{ backgroundColor: getScoreColor(result.sexism_score) }}
-                  ></div>
-                </div>
-                <div className="text-right font-semibold text-lg">{(result.sexism_score * 100).toFixed(0)}%</div>
               </div>
 
-              <div className="mb-6 pb-6 border-b border-[#333344]">
-                <div className="text-lg font-medium text-[#90caf9] mb-3">Explanation</div>
-                <div className="bg-[#2e2e42] p-4 rounded-md text-[#f48fb1] text-base leading-relaxed">{result.explanation}</div>
-              </div>
-
-              <div className="mb-6 pb-6 border-b border-[#333344]">
-                <div className="text-lg font-medium text-[#90caf9] mb-3">Tags</div>
-                <div className="flex flex-wrap gap-2.5">
-                  {result.tags.map((tag, index) => (
-                    <span key={index} className="bg-[#37306b] text-[#90caf9] rounded-2xl py-1 px-3 text-sm">#{tag}</span>
-                  ))}
+              <div className="flex flex-col gap-2 mt-2">
+                <label className="text-base font-medium text-[#90caf9]">
+                  <div className="flex items-center gap-3 bg-[#232336] border border-dashed border-[#6366f1] p-4 rounded-lg cursor-pointer transition-all duration-300 hover:bg-[#2a2a42]">
+                    <div ref={uploadIconRef} className="text-2xl text-[#90caf9]">📷</div>
+                    <span>{image ? `Selected: ${image.name}` : 'Upload Image (Max 10MB)'}</span>
+                    {ocrLoading && <span className="text-sm text-[#f59e0b]">Extracting text...</span>}
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={e => {
+                      const file = e.target.files?.[0] || null;
+                      setImage(file);
+                      setError(null); // Clear any previous errors
+                      
+                      // Animate the upload icon when a file is selected
+                      if (file && uploadIconRef.current) {
+                        gsap.to(uploadIconRef.current, {
+                          rotation: 720,
+                          scale: 1.2,
+                          duration: 0.8,
+                          ease: "elastic.out(1, 0.3)",
+                          onComplete: () => {
+                            gsap.to(uploadIconRef.current, {
+                              scale: 1,
+                              duration: 0.3
+                            });
+                          }
+                        });
+                      }
+                    }}
+                    className="hidden"
+                  />
+                </label>
+                <div className="text-xs text-[#a0aec0] mt-1">
+                  Supported formats: JPEG, PNG, GIF, WebP. The app will extract text from your image.
                 </div>
               </div>
 
-              <div ref={counterCommentsRef}>
-                <div className="text-lg font-medium text-[#90caf9] mb-3">Counter Arguments</div>
-                <ul className="list-none p-0 m-0 flex flex-col gap-3">
-                  {result.counter_comments.map((cc, i) => (
-                    <li key={i} className="counter-comment bg-[#2e2e42] p-4 rounded-md relative pl-6">
-                      <span className="absolute left-3 text-[#6366f1]">•</span>{cc}
-                    </li>
-                  ))}
-                </ul>
+              <div className="flex justify-start mt-4">
+                <button
+                  type="submit"
+                  disabled={loading || ocrLoading || (!comment && !image)}
+                  className={`bg-[#6366f1] text-white border-none rounded-md py-3 px-8 text-base font-semibold cursor-pointer transition-all duration-300 relative overflow-hidden ${loading || ocrLoading ? 'bg-[#4b4b63]' : ''} ${(!loading && !ocrLoading && !(!comment && !image)) ? 'hover:bg-[#4f46e5] hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(99,102,241,0.4)]' : ''} disabled:bg-[#4b4b63] disabled:cursor-not-allowed disabled:opacity-70`}
+                >
+                  {ocrLoading ? 'Extracting Text...' : loading ? 'Analyzing...' : 'Analyze Comment'}
+                </button>
               </div>
-              <div className="mt-10">
-                <Tooltip key="top-start" color="foreground" className="border-none text-[#d88fb0]" content="Speak out—help raise awareness about online misogyny." placement="top-start">
-                  <Button 
-                    className="capitalize" 
-                    color="secondary"
-                    onClick={handleLogComment}
-                  >
-                    LOG YOUR COMMENT
-                  </Button>
-                </Tooltip>
+            </form>
+
+            {loading && (
+              <div className="h-1.5 bg-[#232336] rounded-sm my-6 overflow-hidden">
+                <div ref={progressBarRef} className="h-full bg-gradient-to-r from-[#6366f1] to-[#818cf8] w-0 rounded-sm"></div>
               </div>
-            </div>
-          )}
+            )}
+
+            {error && (
+              <div className="flex items-center gap-3 bg-[#3b1827] border-l-4 border-[#e53e3e] p-4 rounded-md my-6 animate-[fadeIn_0.5s_ease-out]">
+                <div className="text-2xl">⚠️</div>
+                <div className="text-[#f56565]">{error}</div>
+              </div>
+            )}
+
+            {result && (
+              <div ref={resultRef} className="bg-[#232336] rounded-xl p-6 mt-8 shadow-[0_4px_20px_rgba(0,0,0,0.2)] border-l-4 border-[#6366f1]">
+                <div className="text-xl font-semibold text-white mb-6 text-center">Analysis Results</div>
+
+                <div className="mb-6 pb-6 border-b border-[#333344]">
+                  <div className="text-lg font-medium text-[#90caf9] mb-3">Sexism Score</div>
+                  <div className="h-3 bg-[#18181e] rounded-md overflow-hidden mb-2">
+                    <div
+                      ref={scoreRef}
+                      className="h-full w-0 transition-[width] duration-[1.5s] ease-in-out"
+                      style={{ backgroundColor: getScoreColor(result.sexism_score) }}
+                    ></div>
+                  </div>
+                  <div className="text-right font-semibold text-lg">{(result.sexism_score * 100).toFixed(0)}%</div>
+                </div>
+
+                <div className="mb-6 pb-6 border-b border-[#333344]">
+                  <div className="text-lg font-medium text-[#90caf9] mb-3">Explanation</div>
+                  <div className="bg-[#2e2e42] p-4 rounded-md text-[#f48fb1] text-base leading-relaxed">{result.explanation}</div>
+                </div>
+
+                <div className="mb-6 pb-6 border-b border-[#333344]">
+                  <div className="text-lg font-medium text-[#90caf9] mb-3">Tags</div>
+                  <div className="flex flex-wrap gap-2.5">
+                    {result.tags.map((tag, index) => (
+                      <span key={index} className="bg-[#37306b] text-[#90caf9] rounded-2xl py-1 px-3 text-sm">#{tag}</span>
+                    ))}
+                  </div>
+                </div>
+
+                <div ref={counterCommentsRef}>
+                  <div className="text-lg font-medium text-[#90caf9] mb-3">Counter Arguments</div>
+                  <ul className="list-none p-0 m-0 flex flex-col gap-3">
+                    {result.counter_comments.map((cc, i) => (
+                      <li key={i} className="counter-comment bg-[#2e2e42] p-4 rounded-md relative pl-6">
+                        <span className="absolute left-3 text-[#6366f1]">•</span>{cc}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="mt-10">
+                  <Tooltip key="top-start" color="foreground" className="border-none text-[#d88fb0]" content="Speak out—help raise awareness about online misogyny." placement="top-start">
+                    <Button 
+                      className="capitalize" 
+                      color="secondary"
+                      onClick={handleLogComment}
+                    >
+                      LOG YOUR COMMENT
+                    </Button>
+                  </Tooltip>
+                </div>
+              </div>
+            )}
+          </div>
         </main>
       </div>
 
